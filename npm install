@@ -1,0 +1,113 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+
+const airdropData = [
+  {
+    project: "zkLink Nova",
+    status: "Claimed",
+    date: "2025-04-10",
+    token: "ZKL",
+    amount: 120,
+    valueUSD: 45,
+    txUrl: "https://zklinkscan.com/tx/0xabc..."
+  },
+  {
+    project: "Fuel",
+    status: "Task Done",
+    date: "2025-04-12",
+    token: null,
+    amount: null,
+    valueUSD: null,
+    txUrl: null
+  },
+  {
+    project: "ZetaChain",
+    status: "Claimed",
+    date: "2025-04-08",
+    token: "ZETA",
+    amount: 350,
+    valueUSD: 90,
+    txUrl: "https://zetaexplorer.io/tx/0xdef..."
+  }
+];
+
+const chartData = airdropData
+  .filter(a => a.valueUSD)
+  .map((a) => ({ date: a.date, value: a.valueUSD }));
+
+export default function AirdropDashboard() {
+  const [airdrops, setAirdrops] = useState([]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setAirdrops(airdropData);
+    }, 1000);
+  }, []);
+
+  const totalValue = airdrops.reduce((sum, a) => sum + (a.valueUSD || 0), 0);
+  const claimedTokens = airdrops.filter(a => a.token);
+  const tokenSummary = claimedTokens.reduce((summary, a) => {
+    if (!summary[a.token]) {
+      summary[a.token] = 0;
+    }
+    summary[a.token] += a.amount;
+    return summary;
+  }, {});
+
+  return (
+    <div className="p-6 space-y-6 bg-white text-black dark:bg-gray-900 dark:text-white min-h-screen transition-colors">
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow">
+        <h2 className="text-lg font-bold mb-4">📈 Tổng giá trị Airdrop nhận được theo thời gian</h2>
+        <ResponsiveContainer width="100%" height={250}>
+          <LineChart data={chartData}>
+            <XAxis dataKey="date" stroke="#8884d8" />
+            <YAxis stroke="#8884d8" />
+            <Tooltip />
+            <Line type="monotone" dataKey="value" stroke="#82ca9d" strokeWidth={3} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow space-y-2">
+        <h2 className="text-lg font-bold">💰 Tổng giá trị ví Airdrop đã nhận: <span className="text-green-400">${totalValue}</span></h2>
+        <h3 className="text-md font-semibold mt-2">📦 Token đã nhận về ví:</h3>
+        <ul className="list-disc list-inside text-sm">
+          {Object.entries(tokenSummary).map(([token, amount]) => (
+            <li key={token}><strong>{token}</strong>: {amount}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {airdrops.length === 0 ? (
+          <Skeleton className="h-40 w-full" />
+        ) : (
+          airdrops.map((airdrop, index) => (
+            <Card key={index} className="rounded-2xl shadow-md bg-white dark:bg-gray-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-xl font-semibold">{airdrop.project}</h2>
+                  <Badge variant="outline">{airdrop.status}</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground dark:text-gray-400">Ngày: {airdrop.date}</p>
+                {airdrop.token ? (
+                  <>
+                    <p className="mt-2 text-sm">Token: <strong>{airdrop.token}</strong></p>
+                    <p className="text-sm">Số lượng: {airdrop.amount}</p>
+                    <p className="text-sm">Giá trị (ước tính): ${airdrop.valueUSD}</p>
+                    <a href={airdrop.txUrl} target="_blank" className="text-blue-500 underline text-sm">Xem giao dịch</a>
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm italic text-yellow-500">Đang chờ nhận token...</p>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
